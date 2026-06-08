@@ -1,0 +1,35 @@
+---
+description: UI styling với Tailwind CSS + custom CSS
+globs: src/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# Tailwind + CSS
+
+Từ đây về sau, mọi UI mới hoặc chỉnh sửa giao diện phải theo **Tailwind utility classes** + **custom CSS** (`src/index.css`).
+
+## Quy tắc
+
+1. **Tailwind trước** — layout, spacing, typography, màu, border, shadow dùng class Tailwind trong JSX.
+2. **Custom CSS khi cần** — animation phức tạp, pseudo-elements (`::before`/`::after`), gradient đa lớp, sticky table header → đặt trong `@layer components` tại `src/index.css`.
+3. **Không dùng inline `style={{}}`** trừ giá trị động (kích thước tính toán, `backgroundImage` từ props, `animationDelay` theo index).
+4. **Không dùng Bootstrap** — project không có Bootstrap.
+5. **Design tokens** — màu thương hiệu (`brand-navy`, `brand-gold`, `brand-sky`), `shadow-card`, `rounded-card` định nghĩa trong `tailwind.config.js`.
+
+## Ví dụ
+
+```tsx
+// ✅ Tailwind
+<button className="rounded-[10px] bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-btn-primary">
+
+// ✅ Dynamic inline (chấp nhận được)
+<div style={{ backgroundImage: `url(${bg})` }} className="meta-field-card">
+
+// ❌ Tránh inline tĩnh
+<div style={{ display: 'flex', gap: 8, padding: '10px 16px' }}>
+```
+
+## Component dùng chung
+
+- `Card`, `SectionLabel` từ `src/components/ui.tsx`
+- Class CSS tái sử dụng: `.app-header`, `.voice-card`, `.meta-field-card`, `.products-panel`

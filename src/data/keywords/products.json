@@ -1,0 +1,134 @@
+{
+  "products": [
+    {
+      "id": "tomates",
+      "produit": "Tomates",
+      "emoji": "🍅",
+      "categorie": "Produit frais",
+      "avatar": "bg-rose-50 ring-rose-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["tomate", "tomates", "tomate cerise", "tomates cerises", "tomate ronde", "toma", "tomat", "tomates rouges"],
+        "en": ["tomato", "tomatoes", "cherry tomato", "cherry tomatoes", "tomatos", "tomatto"],
+        "vi": ["cà chua", "ca chua", "cachua", "cà chua bi", "cà chua cherry", "cà chua đỏ", "ca chua do", "chua", "cà chua ta"]
+      }
+    },
+    {
+      "id": "carottes",
+      "produit": "Carottes",
+      "emoji": "🥕",
+      "categorie": "Produit frais",
+      "avatar": "bg-orange-50 ring-orange-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["carotte", "carottes", "carote", "carrotes", "carotte orange"],
+        "en": ["carrot", "carrots", "carot", "carots"],
+        "vi": ["cà rốt", "ca rot", "carot", "ca rot do", "cu ca rot", "cà rốt tươi"]
+      }
+    },
+    {
+      "id": "salades",
+      "produit": "Salades",
+      "emoji": "🥬",
+      "categorie": "Produit frais",
+      "avatar": "bg-emerald-50 ring-emerald-300",
+      "defaultUnite": "cagette",
+      "keywords": {
+        "fr": ["salade", "salades", "laitue", "batavia", "mâche", "salaad", "salad", "laitues"],
+        "en": ["salad", "salads", "lettuce", "romaine", "green salad", "leaf lettuce"],
+        "vi": ["rau xà lách", "xà lách", "xa lach", "salade", "rau salad", "rau lettuce", "xà lách lô lô", "rau xanh"]
+      }
+    },
+    {
+      "id": "oranges",
+      "produit": "Oranges",
+      "emoji": "🍊",
+      "categorie": "Produit frais",
+      "avatar": "bg-amber-50 ring-amber-300",
+      "defaultUnite": "colis",
+      "keywords": {
+        "fr": ["orange", "oranges", "orange de table", "oronge", "oranj"],
+        "en": ["orange", "oranges", "oragne", "navel orange"],
+        "vi": ["cam", "quả cam", "qua cam", "cam vàng", "cam ngọt", "orange", "trái cam"]
+      }
+    },
+    {
+      "id": "pommes",
+      "produit": "Pommes",
+      "emoji": "🍎",
+      "categorie": "Produit frais",
+      "avatar": "bg-red-50 ring-red-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["pomme", "pommes", "pomme golden", "pomme granny", "pom", "pommes golden"],
+        "en": ["apple", "apples", "aple", "appel", "red apple"],
+        "vi": ["táo", "tao", "quả táo", "qua tao", "táo đỏ", "tao do", "pomme"]
+      }
+    },
+    {
+      "id": "bananes",
+      "produit": "Bananes",
+      "emoji": "🍌",
+      "categorie": "Produit frais",
+      "avatar": "bg-yellow-50 ring-yellow-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["banane", "bananes", "banan", "bananne"],
+        "en": ["banana", "bananas", "bananna", "banan"],
+        "vi": ["chuối", "chuoi", "chuối tiêu", "chuoi tieu", "chuối già", "banane", "qua chuoi"]
+      }
+    },
+    {
+      "id": "courgettes",
+      "produit": "Courgettes",
+      "emoji": "🥒",
+      "categorie": "Produit frais",
+      "avatar": "bg-lime-50 ring-lime-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["courgette", "courgettes", "courgete", "courget"],
+        "en": ["zucchini", "courgette", "courgettes", "zuchini", "zucchinis"],
+        "vi": ["bí ngòi", "bi ngoi", "bi ngoi xanh", "courgette", "bí xanh"]
+      }
+    },
+    {
+      "id": "poivrons",
+      "produit": "Poivrons",
+      "emoji": "🫑",
+      "categorie": "Produit frais",
+      "avatar": "bg-green-50 ring-green-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["poivron", "poivrons", "poivron rouge", "poivron vert", "poivron jaune", "poivront"],
+        "en": ["pepper", "peppers", "bell pepper", "bell peppers", "capsicum", "sweet pepper"],
+        "vi": ["ớt chuông", "ot chuong", "ot chuong do", "ớt ngọt", "ot ngot", "poivron", "ớt đỏ", "ot do"]
+      }
+    },
+    {
+      "id": "oignons",
+      "produit": "Oignons",
+      "emoji": "🧅",
+      "categorie": "Produit frais",
+      "avatar": "bg-amber-50 ring-amber-200",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["oignon", "oignons", "échalote", "échalotes", "oignion", "ognon"],
+        "en": ["onion", "onions", "shallot", "shallots", "onin", "onions yellow"],
+        "vi": ["hành tây", "hanh tay", "oignon", "hành khô", "hanh kho", "củ hành", "cu hanh", "hành tím"]
+      }
+    },
+    {
+      "id": "pommes-de-terre",
+      "produit": "Pommes de terre",
+      "emoji": "🥔",
+      "categorie": "Produit frais",
+      "avatar": "bg-stone-50 ring-stone-300",
+      "defaultUnite": "kg",
+      "keywords": {
+        "fr": ["pomme de terre", "pommes de terre", "patate", "patates", "pomme terre", "patatte"],
+        "en": ["potato", "potatoes", "potatos", "potatoe", "spud"],
+        "vi": ["khoai tây", "khoai tay", "patate", "khoai tây tươi", "cu khoai tay"]
+      }
+    }
+  ]
+}

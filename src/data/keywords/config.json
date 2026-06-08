@@ -1,0 +1,4 @@
+{
+  "matchThreshold": 0.22,
+  "_matchThresholdHelp": "0 = khớp chính xác, 1 = chấp nhận sai số lớn (fuzzy). Ví dụ 0.22 cho phép ~22% ký tự sai (giọng nói / ASR)."
+}

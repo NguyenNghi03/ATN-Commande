@@ -1,0 +1,21 @@
+{
+  "quantityPatterns": [
+    "(\\d+(?:[.,]\\d+)?)\\s*(?:{units})",
+    "(?:de|of|)\\s*(\\d+(?:[.,]\\d+)?)\\s*(?:{units})",
+    "—\\s*(\\d+(?:[.,]\\d+)?)\\s*(?:{units})",
+    "(\\d+(?:[.,]\\d+)?)\\s*(?:{units})\\s*(?:de|of|)"
+  ],
+  "correctionPatterns": [
+    "(\\d+)\\s*(?:→|->|vers|to|thành|thanh)\\s*(\\d+)",
+    ":\\s*(\\d+)\\s*(?:→|->|vers|to|thành|thanh)\\s*(\\d+)"
+  ],
+  "examples": [
+    { "input": "Tomates ajoutées — 200 kg", "type": "add", "produit": "Tomates", "qte": 200, "unite": "kg" },
+    { "input": "200 kg de tomates", "type": "add", "produit": "Tomates", "qte": 200, "unite": "kg" },
+    { "input": "add 300 kg carrots", "type": "add", "produit": "Carottes", "qte": 300, "unite": "kg" },
+    { "input": "thêm 150 cagette rau xà lách", "type": "add", "produit": "Salades", "qte": 150, "unite": "cagette" },
+    { "input": "Salades — quantité corrigée : 100 → 150 cagettes", "type": "correct", "produit": "Salades", "qte": 150, "oldQte": 100, "unite": "cagette" },
+    { "input": "bonjour", "type": "ignore" },
+    { "input": "80 colis oranges", "type": "add", "produit": "Oranges", "qte": 80, "unite": "colis" }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "units": [
+    {
+      "unite": "kg",
+      "keywords": {
+        "fr": ["kg", "kilo", "kilos", "kilogramme", "kilogrammes", "kgs", "kilo gramme", "kilogram"],
+        "en": ["kg", "kilo", "kilos", "kilogram", "kilograms", "kgs", "kilog", "kilo g"],
+        "vi": ["kg", "ký", "ky", "ki-lô", "kilo", "kilô", "kilogram", "ki lo", "can", "cân", "kilogam", "ki-lô-gam"]
+      }
+    },
+    {
+      "unite": "cagette",
+      "keywords": {
+        "fr": ["cagette", "cagettes", "caissette", "caissettes", "bac", "caget", "casette", "caissete"],
+        "en": ["crate", "crates", "tray", "trays", "basket", "baskets", "flats"],
+        "vi": ["cagette", "rổ", "ro", "thùng nhỏ", "khay", "khay rau", "ro nhua", "thung nho"]
+      }
+    },
+    {
+      "unite": "colis",
+      "keywords": {
+        "fr": ["colis", "carton", "cartons", "caisse", "caisses", "coli", "cartong"],
+        "en": ["box", "boxes", "package", "packages", "case", "cases", "carton box"],
+        "vi": ["colis", "thùng", "thung", "hộp", "hop", "kiện", "kien", "thung carton", "kiện hàng", "kien hang"]
+      }
+    },
+    {
+      "unite": "piece",
+      "keywords": {
+        "fr": ["pièce", "pièces", "unité", "unités", "pc", "pcs", "piece", "pieces"],
+        "en": ["piece", "pieces", "unit", "units", "pc", "pcs", "each", "item"],
+        "vi": ["cái", "cai", "chiếc", "chiec", "quả", "qua", "trái", "trai", "bó", "bo"]
+      }
+    }
+  ]
+}

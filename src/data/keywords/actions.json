@@ -1,0 +1,121 @@
+{
+  "actions": [
+    {
+      "type": "add",
+      "keywords": {
+        "fr": [
+          "ajouté",
+          "ajoutée",
+          "ajoutées",
+          "ajouter",
+          "ajoute",
+          "commander",
+          "commande",
+          "besoin de",
+          "il me faut",
+          "je veux",
+          "livrer"
+        ],
+        "en": [
+          "add",
+          "added",
+          "order",
+          "ordered",
+          "need",
+          "want",
+          "deliver",
+          "give me"
+        ],
+        "vi": [
+          "thêm",
+          "them",
+          "đặt",
+          "dat",
+          "cần",
+          "can",
+          "cho",
+          "giao",
+          "muốn",
+          "muon"
+        ]
+      },
+      "logLabel": {
+        "fr": " ajoutées — {qte} {unite}",
+        "en": " added — {qte} {unite}",
+        "vi": " — thêm {qte} {unite}"
+      }
+    },
+    {
+      "type": "correct",
+      "keywords": {
+        "fr": [
+          "corriger",
+          "corrigée",
+          "corrigées",
+          "correction",
+          "modifier",
+          "modifié",
+          "changer",
+          "changé",
+          "quantité corrigée",
+          "mettre à",
+          "passer à"
+        ],
+        "en": [
+          "correct",
+          "corrected",
+          "correction",
+          "change",
+          "changed",
+          "update",
+          "updated",
+          "quantity corrected",
+          "set to"
+        ],
+        "vi": [
+          "sửa",
+          "sua",
+          "chỉnh",
+          "chinh",
+          "điều chỉnh",
+          "dieu chinh",
+          "cập nhật",
+          "cap nhat",
+          "đổi thành",
+          "doi thanh"
+        ]
+      },
+      "logLabel": {
+        "fr": " — quantité corrigée\u00a0: {oldQte} → {qte} {unite}",
+        "en": " — quantity corrected: {oldQte} → {qte} {unite}",
+        "vi": " — sửa số lượng: {oldQte} → {qte} {unite}"
+      }
+    },
+    {
+      "type": "remove",
+      "keywords": {
+        "fr": ["supprimer", "retirer", "enlever", "annuler", "plus besoin"],
+        "en": ["remove", "removed", "delete", "cancel", "drop"],
+        "vi": ["xóa", "xoa", "bỏ", "bo", "hủy", "huy", "không cần"]
+      },
+      "logLabel": {
+        "fr": " — supprimées",
+        "en": " — removed",
+        "vi": " — đã xóa"
+      }
+    },
+    {
+      "type": "ignore",
+      "keywords": {
+        "fr": ["ignoré", "ignorer", "hors sujet"],
+        "en": ["ignore", "ignored", "off topic"],
+        "vi": ["bỏ qua", "bo qua", "không liên quan"]
+      },
+      "logLabel": {
+        "fr": "",
+        "en": "",
+        "vi": ""
+      }
+    }
+  ]
+}

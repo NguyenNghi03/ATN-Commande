@@ -1,0 +1,50 @@
+{
+  "segments": [
+    {
+      "keywords": {
+        "fr": [
+          "bonjour",
+          "salut",
+          "bonsoir",
+          "attends deux secondes",
+          "attends un instant",
+          "ça va",
+          "comment ça va",
+          "merci",
+          "de rien",
+          "à tout à l'heure",
+          "ok",
+          "d'accord"
+        ],
+        "en": [
+          "hello",
+          "hi",
+          "good morning",
+          "good evening",
+          "wait a second",
+          "wait a moment",
+          "how are you",
+          "thanks",
+          "thank you",
+          "ok",
+          "okay"
+        ],
+        "vi": [
+          "xin chào",
+          "xin chao",
+          "chào",
+          "chao",
+          "đợi chút",
+          "doi chut",
+          "khỏe không",
+          "khoe khong",
+          "cảm ơn",
+          "cam on",
+          "ok",
+          "được",
+          "duoc"
+        ]
+      }
+    }
+  ]
+}
