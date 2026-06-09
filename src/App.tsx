@@ -1,11 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Mic,
-  User,
-  Building2,
-  Calendar,
-  Clock,
-  MessageSquare,
   ChevronDown,
   ChevronUp,
   Check,
@@ -15,22 +10,53 @@ import {
   Copy,
   RotateCcw,
   CheckCircle2,
+  Loader2,
   Pencil,
   Trash2,
+  Clock,
+  Keyboard,
 } from 'lucide-react';
+import { LanguageSelector } from './components/LanguageSelector';
 import { OrderedProductsTable } from './components/OrderedProductsTable';
+import { AdminPanel } from './components/AdminPanel';
 import { Card, SectionLabel } from './components/ui';
+import {
+  actionUi,
+  DEFAULT_LANG,
+  EMPTY_REQUEST_ICON,
+  emptyUi,
+  getLanguage,
+  getRepromptMessage,
+  chatUi,
+  validateUi,
+  textInputUi,
+  voiceUi,
+  type AppLang,
+} from './data/languages';
+import { resolveActionLabel } from './lib/parseOrderMessage';
 import { useOrderState } from './hooks/useOrderState';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import type { ActionLogEntry } from './types/order';
+import type { OrderStatus, RepromptState } from './types/parsedOrder';
 
-const metaFields = [
-  { icon: User,          label: 'Client',            value: 'Resto Martin',         bg: '/img/card001.png' },
-  { icon: Building2,     label: 'Site',              value: 'Entrepôt Sud',         bg: '/img/card002.png' },
-  { icon: Calendar,      label: 'Date de Livraison', value: 'Jeudi 05/06/2026',     bg: '/img/card003.png' },
-  { icon: Clock,         label: 'Créneau',           value: 'Matin (avant 10h)',    bg: '/img/card004.png' },
-  { icon: MessageSquare, label: 'Commentaire',       value: 'Laisser au quai B',    bg: '/img/card005.png' },
-];
+const STATUS_LABEL: Record<OrderStatus, { text: string; className: string }> = {
+  draft: {
+    text: 'Brouillon',
+    className: 'bg-brand-gold text-brand-gold-text',
+  },
+  validated: {
+    text: 'Validée',
+    className: 'bg-emerald-500 text-white',
+  },
+  reopened: {
+    text: 'Réouverte',
+    className: 'bg-blue-500 text-white',
+  },
+};
+
+function displayValue(value: string, fallback = '—'): string {
+  return value.trim() ? value : fallback;
+}
 
 function HeaderDotPattern() {
   const dots: { cx: number; cy: number; r: number; fill: string }[] = [
@@ -147,23 +173,46 @@ function VoiceWaveFull() {
   );
 }
 
-function VoiceAssistantCard({ onTranscript }: { onTranscript: (text: string) => void }) {
+function VoiceAssistantCard({
+  lang,
+  reprompt,
+  onTranscript,
+  onUtteranceEnd,
+}: {
+  lang: AppLang;
+  reprompt: RepromptState;
+  onTranscript: (text: string) => void;
+  onUtteranceEnd?: (fullText: string) => void;
+}) {
   const micSize = 64;
-  const { isListening, displayText, fullText, start, stop, isSupported } =
-    useSpeechRecognition(onTranscript);
+  const speechLang = getLanguage(lang).speech;
+  const ui = voiceUi[lang];
+  const { isReady, isCapturing, isSupported, needsGesture, unlock } =
+    useSpeechRecognition(onTranscript, speechLang, onUtteranceEnd, lang);
 
-  const toggleRecording = () => {
-    if (isListening) stop();
-    else start();
-  };
+  const showReprompt = Boolean(reprompt.required && reprompt.reason);
+  const repromptMessage = reprompt.reason ? getRepromptMessage(lang, reprompt.reason) : '';
+  const subtitle = !isSupported
+    ? ui.unsupported
+    : showReprompt
+      ? repromptMessage
+      : needsGesture
+        ? ui.gesture
+        : ui.ready;
 
   return (
     <div className="voice-card w-full">
       <div className="voice-card__body">
-        <div className={`voice-mic-row${isListening ? ' voice-mic-row--recording' : ''}`}>
+        <div
+          className={`voice-mic-row${isReady ? ' voice-mic-row--active' : ''}${
+            isCapturing ? ' voice-mic-row--recording' : ''
+          }`}
+        >
           <VoiceWaveFull />
           <div
-            className={`voice-mic-stack${isListening ? ' voice-mic-stack--recording' : ''}`}
+            className={`voice-mic-stack${isReady ? ' voice-mic-stack--active' : ''}${
+              isCapturing ? ' voice-mic-stack--recording' : ''
+            }`}
             style={{ width: micSize + 40, height: micSize + 40 }}
           >
             <div className="voice-mic-glow" style={{ width: micSize + 36, height: micSize + 36 }} />
@@ -172,11 +221,12 @@ function VoiceAssistantCard({ onTranscript }: { onTranscript: (text: string) => 
             <div className="voice-mic-ring" style={{ width: micSize + 8, height: micSize + 8 }} />
             <button
               type="button"
-              onClick={() => void toggleRecording()}
-              className={`voice-mic-btn${isListening ? ' voice-mic-btn--recording' : ''}`}
+              onClick={() => unlock()}
+              className={`voice-mic-btn${isCapturing ? ' voice-mic-btn--recording' : ''}${
+                needsGesture ? ' voice-mic-btn--gesture' : ''
+              }`}
               style={{ width: micSize, height: micSize }}
-              aria-label={isListening ? 'Dừng ghi âm' : 'Bắt đầu ghi âm tiếng Việt'}
-              aria-pressed={isListening}
+              aria-label={needsGesture ? ui.gesture : ui.micAriaActive}
             >
               <Mic size={28} color="#fff" strokeWidth={1.75} />
             </button>
@@ -184,20 +234,21 @@ function VoiceAssistantCard({ onTranscript }: { onTranscript: (text: string) => 
         </div>
 
         <div className="voice-card__text">
-          <p
-            className={`voice-card__title${
-              displayText ? ' voice-card__title--live' : isListening ? ' voice-card__title--recording' : ''
-            }`}
-            title={displayText ? fullText : undefined}
-          >
-            {displayText || (isListening ? '…' : 'Nói ngay bây giờ…')}
+          <p className={`voice-card__title${isCapturing ? ' voice-card__title--recording' : ''}`}>
+            {ui.idle}
           </p>
-          <p className={`voice-card__subtitle${isListening ? ' voice-card__subtitle--recording' : ''}`}>
-            {isListening
-              ? 'Bấm lại để dừng'
-              : !isSupported
-                ? 'Trình duyệt không hỗ trợ nhận giọng nói'
-                : 'Mic tiếng Việt — đang nghe lệnh của bạn'}
+          <p
+            className={`voice-card__subtitle${
+              isCapturing
+                ? ' voice-card__subtitle--recording'
+                : showReprompt
+                  ? ' voice-card__subtitle--reprompt'
+                  : needsGesture
+                    ? ' voice-card__subtitle--gesture'
+                    : ''
+            }`}
+          >
+            {subtitle}
           </p>
         </div>
       </div>
@@ -205,7 +256,21 @@ function VoiceAssistantCard({ onTranscript }: { onTranscript: (text: string) => 
   );
 }
 
-function ActionTimelineDot({ type }: { type: ActionLogEntry['type'] }) {
+function ActionTimelineDot({
+  type,
+  phase,
+}: {
+  type: ActionLogEntry['type'];
+  phase: ActionLogEntry['phase'];
+}) {
+  if (phase === 'pending') {
+    return (
+      <div className="actions-timeline__dot actions-timeline__dot--pending">
+        <Loader2 size={12} className="actions-timeline__spinner text-emerald-600" strokeWidth={2.5} />
+      </div>
+    );
+  }
+
   if (type === 'add') {
     return (
       <div className="actions-timeline__dot actions-timeline__dot--add">
@@ -213,7 +278,7 @@ function ActionTimelineDot({ type }: { type: ActionLogEntry['type'] }) {
       </div>
     );
   }
-  if (type === 'correct') {
+  if (type === 'correct' || type === 'replace') {
     return (
       <div className="actions-timeline__dot actions-timeline__dot--correct">
         <RefreshCw size={11} color="#2563eb" strokeWidth={2.5} />
@@ -234,90 +299,110 @@ function ActionTimelineDot({ type }: { type: ActionLogEntry['type'] }) {
   );
 }
 
-function ActionLabel({ entry }: { entry: ActionLogEntry }) {
+function ActionLabel({ entry, lang }: { entry: ActionLogEntry; lang: AppLang }) {
+  const label = resolveActionLabel(entry, lang);
+  const isPending = entry.phase === 'pending';
   return (
     <span
       className={`actions-timeline__label${
         entry.isLatest ? ' actions-timeline__label--latest' : ''
-      }`}
+      }${isPending ? ' actions-timeline__label--pending' : ''}`}
     >
       {entry.type === 'ignore' && (
-        <span className="actions-timeline__badge">Ignoré</span>
+        <span className="actions-timeline__badge">{actionUi[lang].ignoreBadge}</span>
       )}
       {entry.product ? (
         <>
           <strong className="actions-timeline__product">{entry.product}</strong>
-          {entry.label}
+          {label}
         </>
       ) : (
-        entry.label
+        label
       )}
     </span>
   );
 }
 
-function ActionsPanel({ entries }: { entries: ActionLogEntry[] }) {
-  const endRef = useRef<HTMLDivElement>(null);
+function scrollPanelToLatest(el: HTMLDivElement | null) {
+  if (!el) return;
+  requestAnimationFrame(() => {
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  });
+}
+
+function ActionsPanel({ entries, lang }: { entries: ActionLogEntry[]; lang: AppLang }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    scrollPanelToLatest(scrollRef.current);
   }, [entries]);
 
   return (
     <Card className="actions-panel">
-      <div className="actions-panel__header">
+      <div className="actions-panel__columns-header">
         <SectionLabel compact>Actions Détectées</SectionLabel>
+        <SectionLabel compact>{chatUi[lang].title}</SectionLabel>
       </div>
-      <div className="actions-timeline__scroll">
-        <div className="actions-timeline__list">
-          {entries.map((entry, i) => (
-            <div
-              key={i}
-              className={`actions-timeline__item${entry.isLatest ? ' actions-timeline__item--latest' : ''}`}
-            >
-              <div className="actions-timeline__track">
-                <ActionTimelineDot type={entry.type} />
+      <div ref={scrollRef} className="actions-panel__pairs-scroll">
+        {entries.length === 0 ? (
+          <div className="panel-empty panel-empty--compact">
+            <img src={EMPTY_REQUEST_ICON} alt="" className="panel-empty__icon panel-empty__icon--compact" />
+            <p className="panel-empty__text">{emptyUi[lang].request}</p>
+          </div>
+        ) : (
+          <div className="actions-panel__pairs">
+            {entries.map((entry) => (
+              <div
+                key={entry.id}
+                className={`actions-panel__pair${entry.isLatest ? ' actions-panel__pair--latest' : ''}${
+                  entry.phase === 'pending' ? ' actions-panel__pair--pending' : ''
+                }`}
+              >
+                <div className="actions-panel__pair-action">
+                  <div className="actions-timeline__track">
+                    <ActionTimelineDot type={entry.type} phase={entry.phase} />
+                  </div>
+                  <div className="actions-timeline__body">
+                    <ActionLabel entry={entry} lang={lang} />
+                    <span className="actions-timeline__time">
+                      <Clock size={11} strokeWidth={2} className="shrink-0 text-slate-400" />
+                      {entry.time}
+                    </span>
+                  </div>
+                </div>
+                <div className="actions-panel__pair-chat">
+                  <div className="actions-notice__icon">
+                    {entry.source === 'voice' ? (
+                      <Mic size={12} className="text-blue-500" strokeWidth={2} />
+                    ) : (
+                      <Keyboard size={12} className="text-blue-500" strokeWidth={2} />
+                    )}
+                  </div>
+                  <div className="actions-notice__body">
+                    <p className="actions-notice__text">{entry.userText || '—'}</p>
+                    <span className="actions-notice__time">
+                      <Clock size={11} strokeWidth={2} className="shrink-0 text-slate-400" />
+                      {entry.time}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="actions-timeline__body">
-                <ActionLabel entry={entry} />
-                <span className="actions-timeline__time">
-                  <Clock size={11} strokeWidth={2} className="shrink-0 text-slate-400" />
-                  {entry.time}
-                </span>
-              </div>
-            </div>
-          ))}
-          <div ref={endRef} className="actions-timeline__anchor" aria-hidden />
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );
 }
 
-function MetaFieldCard({ icon: Icon, label, value, bg }: {
-  icon: typeof User;
-  label: string;
-  value: string;
-  bg: string;
+function TextInputCard({
+  lang,
+  onSubmit,
+}: {
+  lang: AppLang;
+  onSubmit: (text: string) => boolean;
 }) {
-  return (
-    <div className="meta-field-card" style={{ backgroundImage: `url(${bg})` }}>
-      <div className="meta-field-card__overlay">
-        <div className="mb-1 flex items-center gap-1.5">
-          <Icon size={12} color="#64748b" strokeWidth={2} />
-          <span className="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500">
-            {label}
-          </span>
-        </div>
-        <p className="m-0 truncate text-[12.5px] font-bold leading-tight text-blue-900">
-          {value}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function TextInputCard({ onSubmit }: { onSubmit: (text: string) => boolean }) {
+  const ui = textInputUi[lang];
   const [text, setText] = useState('');
   const [error, setError] = useState(false);
 
@@ -335,7 +420,7 @@ function TextInputCard({ onSubmit }: { onSubmit: (text: string) => boolean }) {
 
   return (
     <Card className="text-input-card w-full">
-      <SectionLabel compact>Saisie Texte (Alternative)</SectionLabel>
+      <SectionLabel compact>{ui.label}</SectionLabel>
       <div className="relative mt-2">
         <textarea
           rows={3}
@@ -350,7 +435,7 @@ function TextInputCard({ onSubmit }: { onSubmit: (text: string) => boolean }) {
               submit();
             }
           }}
-          placeholder="Ex. Tomates ajoutées — 200 kg · add 300 kg carrots · thêm 150 cagette rau xà lách"
+          placeholder={ui.placeholder}
           className={`w-full resize-none overflow-y-auto rounded-[10px] border bg-slate-50 px-3.5 py-2.5 font-[inherit] text-[13px] leading-snug text-slate-700 outline-none ${
             error ? 'border-red-300 ring-1 ring-red-200' : 'border-slate-200'
           }`}
@@ -359,15 +444,13 @@ function TextInputCard({ onSubmit }: { onSubmit: (text: string) => boolean }) {
           type="button"
           onClick={submit}
           className="absolute bottom-2 right-1.5 flex h-[30px] w-[30px] cursor-pointer items-center justify-center rounded-lg border-none bg-blue-600 transition-opacity hover:opacity-90"
-          aria-label="Envoyer la commande"
+          aria-label={ui.sendAria}
         >
           <Send size={14} color="#fff" strokeWidth={2} />
         </button>
       </div>
       {error && (
-        <p className="mt-1.5 text-[11px] text-red-500">
-          Commande non reconnue — essayez&nbsp;: «&nbsp;Tomates ajoutées — 200 kg&nbsp;»
-        </p>
+        <p className="mt-1.5 text-[11px] text-red-500">{ui.error}</p>
       )}
     </Card>
   );
@@ -375,27 +458,48 @@ function TextInputCard({ onSubmit }: { onSubmit: (text: string) => boolean }) {
 
 export default function App() {
   const [jsonOpen, setJsonOpen] = useState(false);
-  const { rows, actionLog, handleMessage, setQty, removeRow, reset } = useOrderState();
+  const [validateHint, setValidateHint] = useState('');
+  const [lang, setLang] = useState<AppLang>(DEFAULT_LANG);
+  const {
+    rows,
+    actionLog,
+    admin,
+    reprompt,
+    status,
+    orderId,
+    handleMessage,
+    clearSpeechCache,
+    setPreferredLang,
+    setQty,
+    removeRow,
+    setAdminField,
+    reset,
+    submitOrder,
+    getJsonContract,
+  } = useOrderState();
 
-  const orderJson = JSON.stringify(
-    {
-      client: 'Resto Martin',
-      site: 'Entrepôt Sud',
-      livraison: '2026-06-05',
-      creneau: 'matin',
-      commentaire: 'Laisser au quai B',
-      lignes: rows.map((r) => ({
-        produit: r.produit,
-        qte: r.qte,
-        unite: r.unite,
-        categorie: r.categorie,
-      })),
-      source: 'voix',
-      ref: 'BC-2026-00142',
-    },
-    null,
-    2,
-  );
+  useEffect(() => {
+    setPreferredLang(lang);
+  }, [lang, setPreferredLang]);
+
+  const onVoiceMessage = (text: string) => handleMessage(text, lang, 'voice');
+  const onTextMessage = (text: string) => handleMessage(text, lang, 'text');
+
+  const statusUi = STATUS_LABEL[status];
+  const orderJson = JSON.stringify(getJsonContract('voice'), null, 2);
+  const hasOrderLines = rows.some((r) => r.qte > 0);
+
+  const onSubmitOrder = () => {
+    if (!submitOrder()) {
+      setValidateHint(validateUi[lang].empty);
+      return;
+    }
+    setValidateHint('');
+  };
+
+  const deliveryLabel = admin.creneau_livraison
+    ? `${displayValue(admin.date_livraison)} · ${admin.creneau_livraison}`
+    : displayValue(admin.date_livraison);
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col bg-[#eef1f6]">
@@ -421,18 +525,24 @@ export default function App() {
 
             <div className="flex items-center gap-2.5 text-[13px]">
               <span className="font-semibold text-brand-gold">Client&nbsp;:</span>
-              <span className="font-semibold text-white">Resto Martin</span>
+              <span className="font-semibold text-white">{displayValue(admin.client)}</span>
 
               <span className="mx-0.5 text-brand-gold/45">·</span>
 
               <span className="font-semibold text-brand-gold">Livraison&nbsp;:</span>
-              <span className="font-medium text-white">Jeudi 05/06/2026</span>
+              <span className="font-medium text-white">{deliveryLabel}</span>
 
               <span className="mx-0.5 text-brand-sky">·</span>
 
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-gold px-3 py-1 text-[11px] font-semibold tracking-wide text-brand-gold-text">
-                <Pencil size={12} color="#412402" strokeWidth={2.5} />
-                Brouillon
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold tracking-wide ${statusUi.className}`}
+              >
+                {status === 'draft' ? (
+                  <Pencil size={12} strokeWidth={2.5} className={status === 'draft' ? 'text-brand-gold-text' : ''} />
+                ) : (
+                  <CheckCircle2 size={12} strokeWidth={2.5} />
+                )}
+                {statusUi.text}
               </span>
             </div>
           </div>
@@ -441,38 +551,44 @@ export default function App() {
 
       <main className="flex min-h-0 w-full flex-1 flex-col gap-2 overflow-hidden px-4 pb-2.5 pt-2">
 
-        {/* ── TOP ZONE ── */}
         <div className="flex shrink-0 flex-col gap-2">
           <div className="flex w-full flex-col gap-2">
             <div className="grid h-[192px] shrink-0 grid-cols-[20%_1fr] items-stretch gap-2 overflow-hidden [&>*]:h-full [&>*]:max-h-full [&>*]:min-h-0">
-              <VoiceAssistantCard onTranscript={handleMessage} />
-              <ActionsPanel entries={actionLog} />
+              <VoiceAssistantCard
+                lang={lang}
+                reprompt={reprompt}
+                onTranscript={onVoiceMessage}
+                onUtteranceEnd={clearSpeechCache}
+              />
+              <ActionsPanel entries={actionLog} lang={lang} />
             </div>
-            <TextInputCard onSubmit={handleMessage} />
+            <TextInputCard lang={lang} onSubmit={onTextMessage} />
           </div>
 
-          <div className="grid h-[100px] w-full shrink-0 grid-cols-5 gap-2.5">
-            {metaFields.map((field) => (
-              <MetaFieldCard
-                key={field.label}
-                icon={field.icon}
-                label={field.label}
-                value={field.value}
-                bg={field.bg}
-              />
-            ))}
-          </div>
+          <AdminPanel admin={admin} onChange={setAdminField} />
         </div>
 
         {/* ── PRODUCTS + FOOTER ── */}
         <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
 
-          <OrderedProductsTable rows={rows} onQtyChange={setQty} onRemove={removeRow} />
+          <OrderedProductsTable
+            rows={rows}
+            lang={lang}
+            onQtyChange={setQty}
+            onRemove={removeRow}
+          />
 
           {/* ── FOOTER ACTIONS ── */}
+          <div className="flex w-full shrink-0 flex-col gap-1.5">
           <div className="flex w-full shrink-0 items-center justify-between">
             <div className="flex gap-2.5">
-              <button className="flex cursor-default items-center gap-2 rounded-[10px] border-none bg-gradient-to-br from-blue-500 to-blue-600 px-6 py-[11px] text-sm font-semibold text-white shadow-btn-primary">
+              <button
+                type="button"
+                onClick={onSubmitOrder}
+                disabled={!hasOrderLines}
+                aria-label={validateUi[lang].aria}
+                className="flex cursor-pointer items-center gap-2 rounded-[10px] border-none bg-gradient-to-br from-blue-500 to-blue-600 px-6 py-[11px] text-sm font-semibold text-white shadow-btn-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+              >
                 <Check size={16} strokeWidth={2.5} />
                 Valider la commande
               </button>
@@ -487,6 +603,7 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-2.5">
+              <LanguageSelector value={lang} onChange={setLang} />
               <button
                 onClick={() => setJsonOpen((v) => !v)}
                 className="flex cursor-pointer items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-4 py-2.5 text-[13px] font-medium text-slate-500"
@@ -497,7 +614,7 @@ export default function App() {
               </button>
               <div className="flex items-center gap-2 rounded-[10px] bg-brand-gold px-3.5 py-2.5">
                 <span className="text-[13px] font-semibold tracking-wide text-white">
-                  BC-2026-00142
+                  {orderId}
                 </span>
                 <button
                   className="flex cursor-default border-none bg-transparent p-0.5 text-white transition-opacity hover:opacity-80"
@@ -507,6 +624,12 @@ export default function App() {
                 </button>
               </div>
             </div>
+          </div>
+          {validateHint ? (
+            <p className="text-[12px] font-medium text-amber-700" role="status">
+              {validateHint}
+            </p>
+          ) : null}
           </div>
 
           {jsonOpen && (

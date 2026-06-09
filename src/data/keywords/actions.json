@@ -4,39 +4,68 @@
       "type": "add",
       "keywords": {
         "fr": [
+          "je veux ajouter",
+          "je veux commander",
+          "je veux acheter",
+          "j'ai besoin de",
+          "passer commande",
           "ajouté",
           "ajoutée",
           "ajoutées",
           "ajouter",
+          "rajouter",
           "ajoute",
           "commander",
           "commande",
           "besoin de",
           "il me faut",
+          "acheter",
           "je veux",
-          "livrer"
+          "livraison",
+          "livrer",
+          "prépare",
+          "prends",
+          "donne",
+          "donnez",
+          "mets",
+          "mettre"
         ],
         "en": [
+          "want to add",
+          "want to order",
+          "want to buy",
+          "place order",
+          "i need",
+          "i want",
+          "give me",
+          "get me",
           "add",
           "added",
           "order",
           "ordered",
           "need",
           "want",
+          "buy",
+          "get",
+          "put",
           "deliver",
-          "give me"
+          "delivery",
+          "ship"
         ],
         "vi": [
+          "muốn thêm",
+          "muon them",
+          "muốn đặt",
+          "muon dat",
+          "muốn mua",
+          "muon mua",
           "thêm",
           "them",
           "đặt",
           "dat",
           "cần",
-          "can",
           "cho",
-          "giao",
-          "muốn",
-          "muon"
+          "giao"
         ]
       },
       "logLabel": {
@@ -49,19 +78,36 @@
       "type": "correct",
       "keywords": {
         "fr": [
+          "modifier la quantité",
+          "quantité corrigée",
+          "je veux changer",
+          "remplacer par",
+          "changer pour",
+          "changer en",
+          "mettre à",
+          "passer à",
           "corriger",
           "corrigée",
           "corrigées",
           "correction",
           "modifier",
           "modifié",
+          "ajuster",
+          "ajusté",
+          "régler",
           "changer",
           "changé",
-          "quantité corrigée",
-          "mettre à",
-          "passer à"
+          "échanger",
+          "à la place"
         ],
         "en": [
+          "modify quantity",
+          "quantity corrected",
+          "want to change",
+          "replace with",
+          "change to",
+          "set to",
+          "switch to",
           "correct",
           "corrected",
           "correction",
@@ -69,20 +115,33 @@
           "changed",
           "update",
           "updated",
-          "quantity corrected",
-          "set to"
+          "adjust",
+          "adjusted",
+          "fix",
+          "modify",
+          "instead"
         ],
         "vi": [
-          "sửa",
-          "sua",
-          "chỉnh",
-          "chinh",
           "điều chỉnh",
           "dieu chinh",
           "cập nhật",
           "cap nhat",
           "đổi thành",
-          "doi thanh"
+          "doi thanh",
+          "đổi lại",
+          "doi lai",
+          "thay bằng",
+          "thay bang",
+          "thay thế",
+          "thay the",
+          "muốn đổi",
+          "muon doi",
+          "không muốn",
+          "khong muon",
+          "sửa",
+          "sua",
+          "chỉnh",
+          "chinh"
         ]
       },
       "logLabel": {
@@ -94,22 +153,132 @@
     {
       "type": "remove",
       "keywords": {
-        "fr": ["supprimer", "retirer", "enlever", "annuler", "plus besoin"],
-        "en": ["remove", "removed", "delete", "cancel", "drop"],
-        "vi": ["xóa", "xoa", "bỏ", "bo", "hủy", "huy", "không cần"]
+        "fr": [
+          "je veux supprimer",
+          "je veux enlever",
+          "je veux retirer",
+          "enlever de la commande",
+          "plus besoin",
+          "pas besoin de",
+          "ne veux pas",
+          "supprimer",
+          "retirer",
+          "enlever",
+          "ôter",
+          "annuler",
+          "réduire",
+          "diminuer"
+        ],
+        "en": [
+          "want to remove",
+          "want to delete",
+          "do not want",
+          "don't want",
+          "no longer need",
+          "take off",
+          "take out",
+          "remove",
+          "removed",
+          "delete",
+          "deleted",
+          "cancel",
+          "cancelled",
+          "drop",
+          "reduce",
+          "decrease",
+          "less",
+          "cut"
+        ],
+        "vi": [
+          "muốn xóa",
+          "muon xoa",
+          "muốn bỏ",
+          "muon bo",
+          "không cần",
+          "khong can",
+          "không muốn",
+          "khong muon",
+          "bỏ đi",
+          "bo di",
+          "xóa",
+          "xoa",
+          "bỏ",
+          "bo",
+          "bớt",
+          "bot",
+          "giảm",
+          "giam",
+          "hủy",
+          "huy",
+          "xóa hết",
+          "xoa het",
+          "bỏ hết",
+          "bo het",
+          "trừ",
+          "tru",
+          "trừ đi"
+
+        ]
       },
       "logLabel": {
-        "fr": " — supprimées",
-        "en": " — removed",
-        "vi": " — đã xóa"
+        "fr": " — retirées {qte} {unite}",
+        "en": " — removed {qte} {unite}",
+        "vi": " — bớt {qte} {unite}"
+      }
+    },
+    {
+      "type": "replace",
+      "keywords": {
+        "fr": [
+          "remplacer par",
+          "à la place de",
+          "changer pour",
+          "changer en",
+          "passer de",
+          "remplacer",
+          "échanger",
+          "échange",
+          "à la place"
+        ],
+        "en": [
+          "replace with",
+          "instead of",
+          "switch to",
+          "change to",
+          "swap for",
+          "trade for",
+          "replace",
+          "replaced",
+          "switch",
+          "swap",
+          "exchange"
+        ],
+        "vi": [
+          "đổi thành",
+          "doi thanh",
+          "đổi lại",
+          "doi lai",
+          "thay bằng",
+          "thay bang",
+          "thay thế",
+          "thay the",
+          "đổi",
+          "doi",
+          "thay"
+        ]
+      },
+      "logLabel": {
+        "fr": " — remplacé\u00a0: {fromProduit} → {qte} {unite}",
+        "en": " — replaced: {fromProduit} → {qte} {unite}",
+        "vi": " — đổi: {fromProduit} → {qte} {unite}"
       }
     },
     {
       "type": "ignore",
       "keywords": {
-        "fr": ["ignoré", "ignorer", "hors sujet"],
-        "en": ["ignore", "ignored", "off topic"],
-        "vi": ["bỏ qua", "bo qua", "không liên quan"]
+        "fr": ["ignoré", "ignorer", "hors sujet", "laisser tomber", "négliger"],
+        "en": ["ignore", "ignored", "off topic", "skip", "not relevant", "never mind"],
+        "vi": ["bỏ qua", "bo qua", "không liên quan", "khong lien quan"]
       },
       "logLabel": {
         "fr": "",

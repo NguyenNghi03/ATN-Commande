@@ -25,11 +25,19 @@
       }
     },
     {
+      "unite": "botte",
+      "keywords": {
+        "fr": ["botte", "bottes", "bote", "bottte"],
+        "en": ["bunch", "bunches", "bundle", "bundles"],
+        "vi": ["bó", "bo", "bó rau", "bo rau", "botte", "bó nhỏ", "bo nho"]
+      }
+    },
+    {
       "unite": "piece",
       "keywords": {
         "fr": ["pièce", "pièces", "unité", "unités", "pc", "pcs", "piece", "pieces"],
         "en": ["piece", "pieces", "unit", "units", "pc", "pcs", "each", "item"],
-        "vi": ["cái", "cai", "chiếc", "chiec", "quả", "qua", "trái", "trai", "bó", "bo"]
+        "vi": ["cái", "cai", "chiếc", "chiec", "quả", "qua", "trái", "trai"]
       }
     }
   ]

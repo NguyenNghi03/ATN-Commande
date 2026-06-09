@@ -1,4 +1,15 @@
 {
-  "matchThreshold": 0.22,
-  "_matchThresholdHelp": "0 = khớp chính xác, 1 = chấp nhận sai số lớn (fuzzy). Ví dụ 0.22 cho phép ~22% ký tự sai (giọng nói / ASR)."
+  "matchThreshold": 0.82,
+  "suggestThreshold": 0.7,
+  "rejectBelow": 0.7,
+  "maxInputLength": 120,
+  "maxWords": 18,
+  "minScoreGap": 0.08,
+  "maxActionLog": 10,
+  "maxUserNotices": 10,
+  "_matchThresholdHelp": "Ngưỡng score tối thiểu (0–1) để tự động khớp sản phẩm sau khi transcript đã sạch.",
+  "_suggestThresholdHelp": "Score tối thiểu để gợi ý (chưa tự thêm vào đơn).",
+  "_minScoreGapHelp": "Khoảng cách score tối thiểu giữa kết quả 1 và 2 để tránh nhầm sản phẩm gần giống.",
+  "_maxActionLogHelp": "Số action gần nhất giữ trong Actions Détectées.",
+  "_maxUserNoticesHelp": "Số message utilisateur gần nhất giữ trong Message utilisateur."
 }

@@ -1,0 +1,70 @@
+{
+  "_meta": {
+    "title": "800 scenario terrain hardcore - mẫu đại diện",
+    "source": "ATN_Commande_Vocale_Fruits_Legumes.docx (Version terrain hardcore)",
+    "task": "P3-TASK-003 / REQ-069",
+    "note": "Test noise xen data, correction, add/delete, validate, unit ngoài V1. expected_behavior đánh dấu case ngoài domain."
+  },
+  "scenarios": [
+    {
+      "id": 1,
+      "dialogue": [
+        "allô tu m'entends, je suis dans le camion",
+        "bon commande pour Dupont demain",
+        "euh attends, 5 kilos de tomates",
+        "non attends mets plutôt 7 kilos de tomates",
+        "ajoute 3 salades",
+        "voilà valide la commande"
+      ],
+      "expected_actions": [
+        { "type": "IGNORE", "value": "allô tu m'entends" },
+        { "type": "IGNORE", "value": "je suis dans le camion" },
+        { "type": "SET_CLIENT", "value": "Dupont" },
+        { "type": "SET_DATE", "value": "demain" },
+        { "type": "ADD_LIGNE", "product": "tomates", "quantity": 5, "unit": "kg" },
+        { "type": "IGNORE", "value": "euh attends" },
+        { "type": "UPDATE_LIGNE", "product": "tomates", "quantity": 7, "unit": "kg" },
+        { "type": "ADD_LIGNE", "product": "salades", "quantity": 3, "unit": "pièce" },
+        { "type": "VALIDATE", "status": "validée" }
+      ]
+    },
+    {
+      "id": 2,
+      "dialogue": [
+        "deux secondes je rappelle",
+        "retire les carottes",
+        "pas de poivrons",
+        "5 kg de champignons"
+      ],
+      "expected_actions": [
+        { "type": "IGNORE", "value": "deux secondes je rappelle" },
+        { "type": "DELETE_LIGNE", "product": "carottes" },
+        { "type": "ADD_LIGNE", "product": "champignons", "quantity": 5, "unit": "kg" }
+      ],
+      "_note": "pas de poivrons → negation, không tạo line poivrons."
+    },
+    {
+      "id": 3,
+      "dialogue": [
+        "2 tonnes de pommes de terre"
+      ],
+      "expected_actions": [],
+      "expected_behavior": "skip",
+      "_note": "Unit 'tonnes' ngoài V1. Phase 1 không support → skip/ignored. KHÔNG tự mở rộng parser core."
+    },
+    {
+      "id": 4,
+      "dialogue": [
+        "vas-y prends 4 cagettes de clémentines",
+        "en fait 6 cagettes de clémentines",
+        "supprime tout non c'est bon"
+      ],
+      "expected_actions": [
+        { "type": "ADD_LIGNE", "product": "clémentines", "quantity": 4, "unit": "cagette" },
+        { "type": "UPDATE_LIGNE", "product": "clémentines", "quantity": 6, "unit": "cagette" },
+        { "type": "VALIDATE", "status": "validée" }
+      ],
+      "_note": "Mâu thuẫn 'supprime tout non c'est bon' → chỉ giữ line chắc chắn + validate."
+    }
+  ]
+}

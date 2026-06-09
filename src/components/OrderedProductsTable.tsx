@@ -1,5 +1,6 @@
 import { Trash2 } from 'lucide-react';
 import { Card } from './ui';
+import { EMPTY_PRODUCTS_ICON, productEmptyUi, type AppLang } from '../data/languages';
 import type { OrderRow } from '../types/order';
 
 const GRID_COLS = 'minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 0.55fr) minmax(0, 0.45fr)';
@@ -9,6 +10,7 @@ const uniteBadgeClass: Record<string, string> = {
   cagette: 'bg-emerald-50 text-emerald-700 ring-emerald-100',
   colis: 'bg-amber-50 text-amber-700 ring-amber-100',
   piece: 'bg-slate-50 text-slate-600 ring-slate-100',
+  botte: 'bg-lime-50 text-lime-700 ring-lime-100',
 };
 
 function ColumnHeader({ children, align }: { children: React.ReactNode; align: 'left' | 'center' }) {
@@ -59,11 +61,12 @@ function QuantityStepper({
 
 type OrderedProductsTableProps = {
   rows: OrderRow[];
+  lang: AppLang;
   onQtyChange: (id: number, qte: number) => void;
   onRemove: (id: number) => void;
 };
 
-export function OrderedProductsTable({ rows, onQtyChange, onRemove }: OrderedProductsTableProps) {
+export function OrderedProductsTable({ rows, lang, onQtyChange, onRemove }: OrderedProductsTableProps) {
   const adjustQty = (id: number, delta: number) => {
     const row = rows.find((r) => r.id === id);
     if (!row) return;
@@ -82,8 +85,10 @@ export function OrderedProductsTable({ rows, onQtyChange, onRemove }: OrderedPro
 
         <div className="products-table__body">
           {rows.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[13px] text-slate-400">
-              Aucun produit — parlez ou saisissez une commande
+            <div className="panel-empty products-table__empty">
+              <img src={EMPTY_PRODUCTS_ICON} alt="" className="panel-empty__icon" />
+              <p className="panel-empty__text">{productEmptyUi[lang].title}</p>
+              <p className="panel-empty__hint">{productEmptyUi[lang].hint}</p>
             </div>
           ) : (
             rows.map((row) => (

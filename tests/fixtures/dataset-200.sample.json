@@ -1,0 +1,220 @@
+{
+  "_meta": {
+    "title": "Dataset 200 câu - mẫu đại diện",
+    "source": "ATN_Commande_Vocale_Fruits_Legumes.docx (Annexe A)",
+    "task": "P3-TASK-001 / REQ-067",
+    "note": "Bộ mẫu phủ test matrix. Import đủ 200 case là task còn lại."
+  },
+  "cases": [
+    {
+      "id": 1,
+      "input": "Bonjour attends-moi, commande pour Dupont demain matin 5 kilos de tomates et 3 salades",
+      "expected": {
+        "client": "Dupont",
+        "site": "",
+        "date_livraison": "demain",
+        "creneau_livraison": "matin",
+        "items": [
+          { "product": "tomates", "quantity": 5, "unit": "kg", "category": "fruits_legumes" },
+          { "product": "salades", "quantity": 3, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": ["Bonjour attends-moi"]
+      }
+    },
+    {
+      "id": 2,
+      "input": "10 kg de carottes pour le client Martin",
+      "expected": {
+        "client": "Martin",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "carottes", "quantity": 10, "unit": "kg", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 3,
+      "input": "3 salades",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "salades", "quantity": 3, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 4,
+      "input": "bonjour ça va merci",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [],
+        "ignored_segments": ["bonjour ça va merci"]
+      }
+    },
+    {
+      "id": 5,
+      "input": "livraison pour Leroy site Nord vendredi 2 cagettes de fraises",
+      "expected": {
+        "client": "Leroy",
+        "site": "Nord",
+        "date_livraison": "vendredi",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "fraises", "quantity": 2, "unit": "cagette", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 6,
+      "input": "pas de tomates, mets 4 kg de pommes de terre",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "pommes de terre", "quantity": 4, "unit": "kg", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 7,
+      "input": "5 tomates non 6 tomates",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "tomates", "quantity": 6, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 8,
+      "input": "5 kilos de tomates, non plutôt 6 kilos de tomates",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "tomates", "quantity": 6, "unit": "kg", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 9,
+      "input": "commande pour Bernard 3 bottes de poireaux et 2 choux",
+      "expected": {
+        "client": "Bernard",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "poireaux", "quantity": 3, "unit": "botte", "category": "fruits_legumes" },
+          { "product": "choux", "quantity": 2, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 10,
+      "input": "j'ai besoin de tomates pour demain",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "demain",
+        "creneau_livraison": "",
+        "items": [],
+        "ignored_segments": []
+      },
+      "_note": "Thiếu quantity → không tạo item, reprompt missingQuantity."
+    },
+    {
+      "id": 11,
+      "input": "ajoute 12 kiwis chez Petit aujourd'hui après-midi",
+      "expected": {
+        "client": "Petit",
+        "site": "",
+        "date_livraison": "aujourd'hui",
+        "creneau_livraison": "après-midi",
+        "items": [
+          { "product": "kiwis", "quantity": 12, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 12,
+      "input": "20 kg de licorne",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [],
+        "ignored_segments": ["20 kg de licorne"]
+      },
+      "_note": "Product ngoài dictionary → bỏ qua, không tạo item."
+    },
+    {
+      "id": 13,
+      "input": "magasin centre, 8 colis d'oranges le 15/06",
+      "expected": {
+        "client": "",
+        "site": "centre",
+        "date_livraison": "15/06",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "oranges", "quantity": 8, "unit": "colis", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 14,
+      "input": "sans concombres mais 5 kg d'aubergines avant 10h",
+      "expected": {
+        "client": "",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "avant 10h",
+        "items": [
+          { "product": "aubergines", "quantity": 5, "unit": "kg", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    },
+    {
+      "id": 15,
+      "input": "prépare 4 kg de mangues, 3 ananas et 2 pastèques pour Durand",
+      "expected": {
+        "client": "Durand",
+        "site": "",
+        "date_livraison": "",
+        "creneau_livraison": "",
+        "items": [
+          { "product": "mangues", "quantity": 4, "unit": "kg", "category": "fruits_legumes" },
+          { "product": "ananas", "quantity": 3, "unit": "pièce", "category": "fruits_legumes" },
+          { "product": "pastèques", "quantity": 2, "unit": "pièce", "category": "fruits_legumes" }
+        ],
+        "ignored_segments": []
+      }
+    }
+  ]
+}

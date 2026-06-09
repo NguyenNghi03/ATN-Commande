@@ -1,0 +1,73 @@
+{
+  "_meta": {
+    "title": "800 scenario đặt hàng bán buôn - mẫu đại diện",
+    "source": "ATN_Commande_Vocale_Fruits_Legumes.docx (800 scénarios)",
+    "task": "P3-TASK-002 / REQ-068",
+    "note": "Replay từng câu trong dialogue và so sánh chuỗi expected_actions."
+  },
+  "scenarios": [
+    {
+      "id": 1,
+      "dialogue": [
+        "commande pour Dupont",
+        "demain matin",
+        "5 kilos de tomates",
+        "3 salades",
+        "valide la commande"
+      ],
+      "expected_actions": [
+        { "type": "SET_CLIENT", "value": "Dupont" },
+        { "type": "SET_DATE", "value": "demain matin" },
+        { "type": "ADD_LIGNE", "product": "tomates", "quantity": 5, "unit": "kg" },
+        { "type": "ADD_LIGNE", "product": "salades", "quantity": 3, "unit": "pièce" },
+        { "type": "VALIDATE", "status": "validée" }
+      ]
+    },
+    {
+      "id": 2,
+      "dialogue": [
+        "client Martin",
+        "10 kg de carottes",
+        "non plutôt 12 kg de carottes",
+        "c'est bon"
+      ],
+      "expected_actions": [
+        { "type": "SET_CLIENT", "value": "Martin" },
+        { "type": "ADD_LIGNE", "product": "carottes", "quantity": 10, "unit": "kg" },
+        { "type": "UPDATE_LIGNE", "product": "carottes", "quantity": 12, "unit": "kg" },
+        { "type": "VALIDATE", "status": "validée" }
+      ]
+    },
+    {
+      "id": 3,
+      "dialogue": [
+        "livraison pour Leroy vendredi",
+        "2 cagettes de fraises",
+        "ajoute 3 bottes de poireaux",
+        "supprime les fraises",
+        "valide"
+      ],
+      "expected_actions": [
+        { "type": "SET_CLIENT", "value": "Leroy" },
+        { "type": "SET_DATE", "value": "vendredi" },
+        { "type": "ADD_LIGNE", "product": "fraises", "quantity": 2, "unit": "cagette" },
+        { "type": "ADD_LIGNE", "product": "poireaux", "quantity": 3, "unit": "botte" },
+        { "type": "DELETE_LIGNE", "product": "fraises" },
+        { "type": "VALIDATE", "status": "validée" }
+      ]
+    },
+    {
+      "id": 4,
+      "dialogue": [
+        "bonjour",
+        "chez Petit",
+        "8 colis d'oranges"
+      ],
+      "expected_actions": [
+        { "type": "IGNORE", "value": "bonjour" },
+        { "type": "SET_CLIENT", "value": "Petit" },
+        { "type": "ADD_LIGNE", "product": "oranges", "quantity": 8, "unit": "colis" }
+      ]
+    }
+  ]
+}

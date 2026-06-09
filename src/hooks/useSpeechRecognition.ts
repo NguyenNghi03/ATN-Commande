@@ -1,6 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Lang } from '../data/keywords';
+import {
+  createProgressiveVoiceState,
+  getUnprocessedVoiceTail,
+  resetProgressiveVoiceState,
+  scanReadyVoiceChunks,
+} from '../lib/progressiveVoice';
+import {
+  buildPhraseFromResults,
+  buildPhraseFromResultsUpTo,
+  shouldEmitTranscript,
+} from '../lib/voicePipeline';
 
 type SpeechRecognitionCtor = new () => SpeechRecognition;
+
+const RESTART_DELAY_MS = 320;
+const CAPTURE_HOLD_MS = 500;
 
 function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
   const w = window as Window & {
@@ -10,124 +25,309 @@ function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-export const SPEECH_LANG = 'vi-VN';
-
 export function tailText(text: string, maxChars = 64): string {
   const trimmed = text.trim();
   if (trimmed.length <= maxChars) return trimmed;
   return `…${trimmed.slice(-maxChars).trimStart()}`;
 }
 
-export function useSpeechRecognition(onTranscript?: (text: string) => void) {
-  const [isListening, setIsListening] = useState(false);
-  const [finalText, setFinalText] = useState('');
-  const [interimText, setInterimText] = useState('');
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+/** Reset buffer sự kiện nói hiện tại. */
+export function clearSpeechVoiceState(refs: {
+  eventTranscript: { current: string };
+  phraseStartIndex: { current: number };
+}) {
+  refs.eventTranscript.current = '';
+  refs.phraseStartIndex.current = -1;
+}
+
+export function useSpeechRecognition(
+  onTranscript?: (text: string) => void,
+  speechLang = 'fr-FR',
+  onUtteranceEnd?: (fullText: string) => void,
+  preferredLang: Lang = 'fr',
+) {
+  const [isReady, setIsReady] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const [needsGesture, setNeedsGesture] = useState(false);
+  const activeRef = useRef(false);
   const listeningRef = useRef(false);
-  const accumulatedRef = useRef('');
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const restartTimerRef = useRef<number | null>(null);
+  const captureTimerRef = useRef<number | null>(null);
+  const eventTranscriptRef = useRef('');
+  const phraseStartIndexRef = useRef(-1);
+  const progressiveStateRef = useRef(createProgressiveVoiceState());
+  const lastEmittedRef = useRef('');
+  const lastFinalCountRef = useRef(0);
+  const speechLangRef = useRef(speechLang);
+  const preferredLangRef = useRef(preferredLang);
   const onTranscriptRef = useRef(onTranscript);
+  const onUtteranceEndRef = useRef(onUtteranceEnd);
+  const beginSessionRef = useRef<() => void>(() => {});
+  speechLangRef.current = speechLang;
+  preferredLangRef.current = preferredLang;
   onTranscriptRef.current = onTranscript;
+  onUtteranceEndRef.current = onUtteranceEnd;
+
+  const voiceStateRefs = {
+    eventTranscript: eventTranscriptRef,
+    phraseStartIndex: phraseStartIndexRef,
+  };
 
   const isSupported = typeof window !== 'undefined' && getSpeechRecognitionCtor() !== null;
 
-  const fullText = [finalText, interimText].filter(Boolean).join(' ').trim();
-  const displayText = fullText ? tailText(fullText) : '';
-
-  const emitTranscript = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (trimmed) onTranscriptRef.current?.(trimmed);
+  const clearRestartTimer = useCallback(() => {
+    if (restartTimerRef.current !== null) {
+      window.clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
   }, []);
 
-  const stop = useCallback(() => {
-    listeningRef.current = false;
-    setIsListening(false);
-    setInterimText('');
-    recognitionRef.current?.stop();
+  const clearCaptureTimer = useCallback(() => {
+    if (captureTimerRef.current !== null) {
+      window.clearTimeout(captureTimerRef.current);
+      captureTimerRef.current = null;
+    }
+  }, []);
+
+  const resetEventState = useCallback(() => {
+    clearSpeechVoiceState(voiceStateRefs);
+    resetProgressiveVoiceState(progressiveStateRef.current);
+    lastEmittedRef.current = '';
+    lastFinalCountRef.current = 0;
+  }, []);
+
+  const beginSpeechEvent = useCallback(() => {
+    resetEventState();
+  }, [resetEventState]);
+
+  const emitReadyChunks = useCallback((liveText: string) => {
+    const ready = scanReadyVoiceChunks(
+      liveText,
+      preferredLangRef.current,
+      progressiveStateRef.current,
+    );
+
+    for (const chunk of ready) {
+      if (!shouldEmitTranscript(chunk, lastEmittedRef.current)) continue;
+      lastEmittedRef.current = chunk;
+      onTranscriptRef.current?.(chunk);
+    }
+  }, []);
+
+  const commitSpeechEventAndClear = useCallback(() => {
+    const fullText = eventTranscriptRef.current.trim();
+    const tail = getUnprocessedVoiceTail(
+      eventTranscriptRef.current,
+      progressiveStateRef.current,
+    );
+    resetEventState();
+
+    if (tail.length >= 2) {
+      onTranscriptRef.current?.(tail);
+    }
+
+    onUtteranceEndRef.current?.(fullText);
+  }, [resetEventState]);
+
+  const markCapturing = useCallback(() => {
+    clearCaptureTimer();
+    setIsCapturing(true);
+  }, [clearCaptureTimer]);
+
+  const releaseCapturingSoon = useCallback(() => {
+    clearCaptureTimer();
+    captureTimerRef.current = window.setTimeout(() => {
+      captureTimerRef.current = null;
+      setIsCapturing(false);
+    }, CAPTURE_HOLD_MS);
+  }, [clearCaptureTimer]);
+
+  const disposeRecognition = useCallback(() => {
+    const recognition = recognitionRef.current;
+    if (!recognition) return;
+    recognition.onstart = null;
+    recognition.onend = null;
+    recognition.onerror = null;
+    recognition.onresult = null;
+    recognition.onspeechstart = null;
+    recognition.onsoundstart = null;
+    recognition.onspeechend = null;
+    try {
+      recognition.abort();
+    } catch {
+      /* ignore */
+    }
     recognitionRef.current = null;
+    listeningRef.current = false;
   }, []);
 
-  const start = useCallback(() => {
-    const Ctor = getSpeechRecognitionCtor();
-    if (!Ctor) return;
+  const stopSession = useCallback(() => {
+    clearRestartTimer();
+    clearCaptureTimer();
+    disposeRecognition();
+    resetEventState();
+    setIsCapturing(false);
+  }, [clearCaptureTimer, clearRestartTimer, disposeRecognition, resetEventState]);
 
-    stop();
-    setFinalText('');
-    setInterimText('');
-    accumulatedRef.current = '';
+  const scheduleRestart = useCallback(() => {
+    if (!activeRef.current) return;
+    clearRestartTimer();
+    restartTimerRef.current = window.setTimeout(() => {
+      restartTimerRef.current = null;
+      if (activeRef.current) beginSessionRef.current();
+    }, RESTART_DELAY_MS);
+  }, [clearRestartTimer]);
+
+  beginSessionRef.current = () => {
+    if (!activeRef.current) return;
+
+    const Ctor = getSpeechRecognitionCtor();
+    if (!Ctor) {
+      activeRef.current = false;
+      setIsReady(false);
+      setIsCapturing(false);
+      return;
+    }
+
+    clearRestartTimer();
+    disposeRecognition();
+    resetEventState();
+    setIsCapturing(false);
+    setIsReady(false);
 
     const recognition = new Ctor();
-    recognition.lang = SPEECH_LANG;
+    recognition.lang = speechLangRef.current;
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
+    recognition.onstart = () => {
+      listeningRef.current = true;
+      setIsReady(true);
+      setNeedsGesture(false);
+    };
+
+    recognition.onspeechstart = () => {
+      markCapturing();
+      beginSpeechEvent();
+    };
+
+    recognition.onsoundstart = () => {
+      markCapturing();
+    };
+
+    recognition.onspeechend = () => {
+      commitSpeechEventAndClear();
+      releaseCapturingSoon();
+    };
+
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let interim = '';
-      const finals: string[] = [];
+      markCapturing();
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const text = (result[0]?.transcript ?? '').trim();
-        if (!text) continue;
-        if (result.isFinal) finals.push(text);
-        else interim = text;
+      if (phraseStartIndexRef.current < 0) {
+        phraseStartIndexRef.current = event.resultIndex;
       }
 
-      if (finals.length > 0) {
-        const phrase = finals.join(' ');
-        accumulatedRef.current = accumulatedRef.current
-          ? `${accumulatedRef.current} ${phrase}`
-          : phrase;
-        setFinalText(accumulatedRef.current);
-        setInterimText('');
-        emitTranscript(phrase);
-        emitTranscript(accumulatedRef.current);
-      } else if (interim) {
-        setInterimText(interim);
-        const live = accumulatedRef.current
-          ? `${accumulatedRef.current} ${interim}`
-          : interim;
-        emitTranscript(live);
-      }
-    };
+      const start = phraseStartIndexRef.current;
+      const livePhrase = buildPhraseFromResults(event.results, start);
+      eventTranscriptRef.current = livePhrase;
 
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        listeningRef.current = false;
-        setIsListening(false);
-      }
-    };
+      // Interim: quét và xử lý ngay khi đủ key (không chờ hết câu)
+      emitReadyChunks(livePhrase);
 
-    recognition.onend = () => {
-      if (listeningRef.current) {
-        try {
-          recognition.start();
-        } catch {
-          listeningRef.current = false;
-          setIsListening(false);
+      // Mỗi đoạn isFinal của trình duyệt → flush lại ngay (trước speechend)
+      let finalCount = 0;
+      for (let i = start; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalCount++;
+      }
+
+      if (finalCount > lastFinalCountRef.current) {
+        lastFinalCountRef.current = finalCount;
+        for (let i = start; i < event.results.length; i++) {
+          if (!event.results[i].isFinal) continue;
+          const finalizedPhrase = buildPhraseFromResultsUpTo(event.results, start, i);
+          emitReadyChunks(finalizedPhrase);
         }
       }
     };
 
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      listeningRef.current = false;
+      setIsReady(false);
+      setIsCapturing(false);
+
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        activeRef.current = false;
+        setNeedsGesture(true);
+        return;
+      }
+
+      if (activeRef.current) scheduleRestart();
+    };
+
+    recognition.onend = () => {
+      listeningRef.current = false;
+      recognitionRef.current = null;
+      setIsCapturing(false);
+
+      if (!activeRef.current) {
+        setIsReady(false);
+        return;
+      }
+
+      setIsReady(false);
+      scheduleRestart();
+    };
+
     recognitionRef.current = recognition;
-    listeningRef.current = true;
-    setIsListening(true);
 
     try {
       recognition.start();
     } catch {
       listeningRef.current = false;
-      setIsListening(false);
+      setIsReady(false);
+      setNeedsGesture(true);
+      scheduleRestart();
     }
-  }, [emitTranscript, stop]);
+  };
 
-  const stopAndProcess = useCallback(() => {
-    const pending = [accumulatedRef.current, interimText].filter(Boolean).join(' ').trim();
-    stop();
-    if (pending) emitTranscript(pending);
-  }, [emitTranscript, interimText, stop]);
+  const activate = useCallback(() => {
+    if (!getSpeechRecognitionCtor()) return;
+    activeRef.current = true;
+    setNeedsGesture(false);
+    beginSessionRef.current();
+  }, []);
 
-  useEffect(() => () => stop(), [stop]);
+  const unlock = useCallback(() => {
+    if (!getSpeechRecognitionCtor()) return;
+    activeRef.current = true;
+    setNeedsGesture(false);
+    beginSessionRef.current();
+  }, []);
 
-  return { isListening, displayText, fullText, start, stop: stopAndProcess, isSupported };
+  const deactivate = useCallback(() => {
+    activeRef.current = false;
+    stopSession();
+    setIsReady(false);
+  }, [stopSession]);
+
+  useEffect(() => {
+    activate();
+
+    const onGesture = () => {
+      if (!listeningRef.current && activeRef.current) {
+        beginSessionRef.current();
+      }
+    };
+
+    window.addEventListener('pointerdown', onGesture);
+
+    return () => {
+      window.removeEventListener('pointerdown', onGesture);
+      deactivate();
+    };
+  }, [speechLang, preferredLang, activate, deactivate]);
+
+  return { isReady, isCapturing, isSupported, needsGesture, unlock };
 }
