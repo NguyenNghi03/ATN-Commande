@@ -1,5 +1,5 @@
 import { Globe } from 'lucide-react';
-import { DEFAULT_LANG, LANGUAGES, type AppLang } from '../data/languages';
+import { DEFAULT_LANG, VISIBLE_LANGUAGES, type AppLang } from '../data/languages';
 
 type LanguageSelectorProps = {
   value?: AppLang;
@@ -7,16 +7,18 @@ type LanguageSelectorProps = {
 };
 
 export function LanguageSelector({ value = DEFAULT_LANG, onChange }: LanguageSelectorProps) {
+  const safeValue = VISIBLE_LANGUAGES.some((l) => l.id === value) ? value : DEFAULT_LANG;
+
   return (
     <label className="relative flex cursor-pointer items-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-[13px] font-medium text-slate-500">
       <Globe size={14} strokeWidth={2} className="shrink-0 text-slate-400" />
       <select
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value as AppLang)}
         className="cursor-pointer appearance-none border-none bg-transparent pr-4 font-[inherit] text-[13px] font-semibold text-slate-600 outline-none"
         aria-label="Choisir la langue"
       >
-        {LANGUAGES.map((lang) => (
+        {VISIBLE_LANGUAGES.map((lang) => (
           <option key={lang.id} value={lang.id}>
             {lang.label}
           </option>

@@ -16,10 +16,22 @@ export const LANGUAGES: LanguageOption[] = [
   { id: 'vi', label: 'Tiếng Việt', short: 'VI', speech: 'vi-VN' },
 ];
 
+/** Vietnamese UI is dev-only; hidden from production builds. */
+export const VI_ENABLED = !import.meta.env.PROD;
+
+export const VISIBLE_LANGUAGES: LanguageOption[] = VI_ENABLED
+  ? LANGUAGES
+  : LANGUAGES.filter((l) => l.id !== 'vi');
+
 export const DEFAULT_LANG: AppLang = 'fr';
 
+export function isLangVisible(id: AppLang): boolean {
+  return id !== 'vi' || VI_ENABLED;
+}
+
 export function getLanguage(id: AppLang): LanguageOption {
-  return LANGUAGES.find((l) => l.id === id) ?? LANGUAGES[0];
+  const resolved = isLangVisible(id) ? id : DEFAULT_LANG;
+  return LANGUAGES.find((l) => l.id === resolved) ?? LANGUAGES[0];
 }
 
 export const voiceUi: Record<
