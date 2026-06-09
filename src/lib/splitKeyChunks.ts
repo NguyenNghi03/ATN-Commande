@@ -45,12 +45,24 @@ function getChunkAnchorKeywords(): string[] {
   };
 
   for (const { keyword } of allActionKeywords()) {
+    const nk = normalizeChunkText(keyword);
+    // « cho » đơn lẻ tách nhầm « đơn hàng cho Client » — vẫn nhận lệnh qua detectActionType.
+    if (nk === 'cho') continue;
     push(keyword);
   }
 
   for (const keyword of triggers.validate ?? []) {
     push(keyword);
   }
+
+  for (const keyword of [...(triggers.client ?? []), ...(triggers.site ?? [])]) {
+    const nk = normalizeChunkText(keyword);
+    // « cho » đơn — anchor tách; vẫn dùng trong parser client (extractAfterTrigger).
+    if (nk === 'cho') continue;
+    push(keyword);
+  }
+  push('giao hàng');
+  push('giao hang');
 
   cachedAnchorKeywords = keywords.sort((a, b) => b.length - a.length);
   return cachedAnchorKeywords;

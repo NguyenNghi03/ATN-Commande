@@ -98,6 +98,18 @@
     );
   }
 
+  .meta-field-card__picker-btn {
+    @apply flex shrink-0 items-center justify-center rounded-md border-none bg-blue-600 p-1 text-white shadow-sm transition;
+  }
+
+  .meta-field-card__picker-btn:hover {
+    @apply bg-blue-700 text-white;
+  }
+
+  .meta-field-card__picker-input {
+    @apply pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0;
+  }
+
   .text-input-card {
     @apply shrink-0 !p-3.5 !px-4;
   }

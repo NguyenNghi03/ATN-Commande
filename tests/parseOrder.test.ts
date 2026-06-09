@@ -98,6 +98,28 @@ describe('P1-TASK-006 - admin triggers', () => {
   });
 });
 
+describe('VI - tạo đơn hàng (client + ngày giao + sản phẩm)', () => {
+  it('Tạo đơn hàng cho Ets Dupont, Giao hàng ngày mai và 5 kg cà chua', () => {
+    const { order } = parse(
+      'Tạo đơn hàng cho Ets Dupont, Giao hàng ngày mai và 5 kg cà chua',
+    );
+    expect(order.client).toBe('Ets Dupont');
+    expect(order.date_livraison).toBe('ngày mai');
+    expect(order.items).toEqual([
+      expect.objectContaining({ product: 'tomates', quantity: 5, unit: 'kg' }),
+    ]);
+  });
+
+  it('không dấu (voice) — tao don hang cho Ets Dupont, giao hang ngay mai va 5 kg ca chua', () => {
+    const { order } = parse(
+      'tao don hang cho Ets Dupont, giao hang ngay mai va 5 kg ca chua',
+    );
+    expect(order.client).toBe('Ets Dupont');
+    expect(order.date_livraison).toBe('ngày mai');
+    expect(order.items[0]).toMatchObject({ product: 'tomates', quantity: 5, unit: 'kg' });
+  });
+});
+
 describe('P1-TASK-002 - JSON contract', () => {
   it('có đủ AUTO fields và không lộ field nội bộ', () => {
     const { order } = parse('5 kg de tomates');

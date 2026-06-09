@@ -1,13 +1,9 @@
 import { Printer, X } from 'lucide-react';
 import { BonDeCommande } from '../components/BonDeCommande';
 import { loadBonDeCommandeSnapshot, mainAppUrl } from '../lib/bonDeCommandeUrl';
-import { buildOrderForm } from '../lib/orderForm';
+import { buildOrderForm, EMPTY_ADMIN } from '../lib/orderForm';
 
-const EMPTY_FORM = buildOrderForm(
-  { client: '', site: '', date_livraison: '', creneau_livraison: '', commentaire_livraison: '' },
-  [],
-  { date_commande: '' },
-);
+const EMPTY_FORM = buildOrderForm(EMPTY_ADMIN, [], { date_commande: '' });
 
 export function BonDeCommandePage() {
   const snapshot = loadBonDeCommandeSnapshot();

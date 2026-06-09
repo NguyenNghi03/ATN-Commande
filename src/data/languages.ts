@@ -3,17 +3,20 @@ import type { RepromptReason } from '../types/parsedOrder';
 
 export type AppLang = Lang;
 
+export type CountryCode = 'FR' | 'US' | 'VN';
+
 export type LanguageOption = {
   id: AppLang;
   label: string;
   short: string;
   speech: string;
+  countryCode: CountryCode;
 };
 
 export const LANGUAGES: LanguageOption[] = [
-  { id: 'fr', label: 'Français', short: 'FR', speech: 'fr-FR' },
-  { id: 'en', label: 'English', short: 'EN', speech: 'en-US' },
-  { id: 'vi', label: 'Tiếng Việt', short: 'VI', speech: 'vi-VN' },
+  { id: 'fr', label: 'Français', short: 'FR', speech: 'fr-FR', countryCode: 'FR' },
+  { id: 'en', label: 'English', short: 'EN', speech: 'en-US', countryCode: 'US' },
+  { id: 'vi', label: 'Tiếng Việt', short: 'VI', speech: 'vi-VN', countryCode: 'VN' },
 ];
 
 /** Vietnamese UI is dev-only; hidden from production builds. */
