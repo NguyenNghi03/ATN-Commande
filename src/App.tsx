@@ -34,6 +34,7 @@ import {
   type AppLang,
 } from './data/languages';
 import { resolveActionLabel } from './lib/parseOrderMessage';
+import { resolveAdminFields } from './lib/orderForm';
 import { useOrderState } from './hooks/useOrderState';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import type { ActionLogEntry } from './types/order';
@@ -497,9 +498,8 @@ export default function App() {
     setValidateHint('');
   };
 
-  const deliveryLabel = admin.creneau_livraison
-    ? `${displayValue(admin.date_livraison)} · ${admin.creneau_livraison}`
-    : displayValue(admin.date_livraison);
+  const deliveryAdmin = resolveAdminFields(admin);
+  const deliveryLabel = `${deliveryAdmin.date_livraison} · ${deliveryAdmin.creneau_livraison}`;
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col bg-[#eef1f6]">

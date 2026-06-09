@@ -1,3 +1,4 @@
+import { isClockCreneau } from '../lib/orderForm';
 import type { OrderForm } from '../types/orderForm';
 
 function valueOr(value: string, placeholder = '—'): string {
@@ -54,7 +55,9 @@ export function BonDeCommande({ form, orderId, variant = 'preview' }: BonDeComma
         <p>
           <span className="bon-invoice__label">Date livraison :</span>{' '}
           {valueOr(form.date_livraison)}
-          {form.creneau_livraison ? ` (${form.creneau_livraison.toUpperCase()})` : ''}
+          {form.creneau_livraison
+            ? ` (${isClockCreneau(form.creneau_livraison) ? form.creneau_livraison : form.creneau_livraison.toUpperCase()})`
+            : ''}
         </p>
         {orderId ? (
           <p className="bon-invoice__order-ref">

@@ -20,6 +20,7 @@ import {
   matchesKeywordBoundary,
   splitIntoKeyChunks,
 } from './splitKeyChunks';
+import { parseOrder } from './parseOrder';
 import { isValidateIntent } from './orderValidate';
 
 export {
@@ -82,8 +83,31 @@ const WORD_NUMBERS: Record<string, number> = {
   nghin: 1000,
 };
 
+/** Bỏ thứ trong tuần để « thứ sáu » không bị đọc thành số 6. */
+function textForQuantityExtraction(text: string): string {
+  let n = normalize(text);
+  const weekdayPatterns = [
+    /\bthu\s+hai\b/g,
+    /\bthu\s+ba\b/g,
+    /\bthu\s+tu\b/g,
+    /\bthu\s+nam\b/g,
+    /\bthu\s+sau\b/g,
+    /\bthu\s+bay\b/g,
+    /\bchu\s+nhat\b/g,
+    /\blundi\b/g,
+    /\bmardi\b/g,
+    /\bmercredi\b/g,
+    /\bjeudi\b/g,
+    /\bvendredi\b/g,
+    /\bsamedi\b/g,
+    /\bdimanche\b/g,
+  ];
+  for (const re of weekdayPatterns) n = n.replace(re, ' ');
+  return n.replace(/\s+/g, ' ').trim();
+}
+
 function extractSpokenQuantity(text: string): number | null {
-  const n = normalize(text);
+  const n = textForQuantityExtraction(text);
 
   const digitMatches = [...n.matchAll(/(\d+(?:[.,]\d+)?)/g)];
   if (digitMatches.length > 0) {
@@ -250,10 +274,31 @@ function getActionKeywordsByPriority(): CachedActionKeyword[] {
 
 function detectActionType(text: string): OrderActionType | null {
   const n = normalize(text);
+  if (hasLeadingCorrectionIntent(text)) return 'correct';
   for (const { type, normalized } of getActionKeywordsByPriority()) {
     if (matchesKeywordBoundary(n, normalized)) return type;
   }
   return null;
+}
+
+/** « Không, 300… » / « non 6 tomates » — sửa số lượng, không cộng dồn. */
+export function hasLeadingCorrectionIntent(text: string): boolean {
+  return /^(?:non|khong|không)\b\s*,?\s*/i.test(normalize(text));
+}
+
+/** Cụm chỉ admin (client / date / site) — không quét sản phẩm ảo. */
+export function isAdminOnlyClause(text: string): boolean {
+  const { order } = parseOrder(text, { source: 'voice' });
+  const hasAdmin = !!(
+    order.client ||
+    order.site ||
+    order.date_livraison ||
+    order.creneau_livraison
+  );
+  if (!hasAdmin) return false;
+  if (extractSpokenQuantity(text) !== null) return false;
+  if (order.items.length > 0) return false;
+  return true;
 }
 
 /** Loại từ khóa hành động trước khi khớp sản phẩm (tránh « them » ≈ « thom »). */
@@ -288,6 +333,7 @@ function findLeadActionKeyword(text: string): string | null {
 
 /** Cụm con bỏ mất từ khóa hành động (vd. « 2 trai tao » trong « xoa 2 trai tao »). */
 function shouldSkipDerivedClause(parent: string, child: string): boolean {
+  if (hasLeadingCorrectionIntent(parent)) return true;
   const parentAction = detectActionType(parent);
   if (!parentAction || !EXCLUSIVE_ACTION_TYPES.includes(parentAction)) return false;
   const childAction = detectActionType(child);
@@ -553,6 +599,8 @@ function parseSingleMessage(
   const replaced = tryParseReplace(text, preferredLang);
   if (replaced) return replaced;
 
+  if (isAdminOnlyClause(text)) return { type: 'unknown' };
+
   const actionType = detectActionType(text);
   const product = findProduct(text, preferredLang);
 
@@ -581,7 +629,7 @@ function parseSingleMessage(
   const qte = correction?.qte ?? extractSpokenQuantity(text);
   const unite = findUnit(text, product.defaultUnite, preferredLang);
 
-  if (actionType === 'correct' || correction) {
+  if (actionType === 'correct' || correction || hasLeadingCorrectionIntent(text)) {
     const resolvedQte = qte ?? (actionType === 'correct' ? 1 : null);
     if (resolvedQte === null) return { type: 'unknown' };
     return {
@@ -753,6 +801,7 @@ function scanProductWindows(
   context?: ParseMessageContext,
 ) {
   if (text.length > maxLen) return;
+  if (isAdminOnlyClause(text)) return;
 
   const productText = stripActionKeywordsForProductMatch(normalize(text));
   if (!productText) return;
@@ -782,8 +831,13 @@ function scanProductWindows(
 
 /** Tìm lệnh trong câu dài / transcript vocal (thử cả câu, từng đoạn, ghép 2 đoạn liền kề). */
 export function parseOrderMessage(rawText: string, preferredLang?: Lang): ParsedOrderMessage {
+  const text = rawText.trim();
+  if (hasLeadingCorrectionIntent(text)) {
+    const corrected = parseSingleMessage(text, preferredLang);
+    if (corrected.type === 'correct') return corrected;
+  }
   const all = parseOrderMessages(rawText, preferredLang);
-  return all[0] ?? { type: 'unknown' };
+  return all.find((m) => m.type === 'correct') ?? all[0] ?? { type: 'unknown' };
 }
 
 /** Quét mọi cụm từ khóa sản phẩm trong transcript (giọng nói / text dài). */
@@ -836,6 +890,8 @@ export function isChunkReady(chunk: string, preferredLang?: Lang): boolean {
   if (trimmed.length < 3) return false;
 
   if (isValidateIntent(trimmed)) return true;
+
+  if (isAdminOnlyClause(trimmed)) return true;
 
   const direct = parseOrderMessage(trimmed, preferredLang);
   if (direct.type !== 'unknown' && direct.type !== 'ignore') return true;

@@ -20,6 +20,7 @@ import type {
 function normalize(text: string): string {
   return text
     .toLowerCase()
+    .replace(/đ/g, 'd')
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .replace(/[«»“”"']/g, ' ')
@@ -161,6 +162,16 @@ function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Có ý định sửa/thay thế (FR/VI) — Phase 1 không reprompt thiếu số lượng. */
+function hasCorrectionIntent(norm: string): boolean {
+  for (const trig of triggers.correction) {
+    const nt = normalize(trig);
+    const re = new RegExp(`(?:^|\\s)${escapeRegex(nt)}(?=\\s|$)`);
+    if (re.test(norm)) return true;
+  }
+  return false;
+}
+
 /** Có phủ định (pas de / pas / sans) đứng ngay trước sản phẩm (trong window `before`)? */
 function hasNegationBefore(before: string): boolean {
   const trimmed = before.trim();
@@ -199,7 +210,7 @@ function extractAfterTrigger(clause: string, triggerList: string[]): string | nu
     for (let i = 0; i + tw.length <= normTokens.length; i++) {
       if (normTokens.slice(i, i + tw.length).join(' ') !== tw.join(' ')) continue;
       const value: string[] = [];
-      for (let j = i + tw.length; j < origTokens.length && value.length < 2; j++) {
+      for (let j = i + tw.length; j < origTokens.length && value.length < 4; j++) {
         if (!isNameToken(normTokens[j])) break;
         value.push(origTokens[j].replace(/[.,;:]+$/, ''));
       }
@@ -212,7 +223,10 @@ function extractAfterTrigger(clause: string, triggerList: string[]): string | nu
 function extractDate(norm: string): string {
   const dateFormat = norm.match(/\b(\d{1,2}\/\d{1,2}(?:\/\d{2,4})?)\b/);
   if (dateFormat) return dateFormat[1];
-  for (const token of triggers.date_tokens) {
+  const tokens = [...triggers.date_tokens].sort(
+    (a, b) => normalize(b).length - normalize(a).length,
+  );
+  for (const token of tokens) {
     const nt = normalize(token);
     const re = new RegExp(`(?:^|\\s)${escapeRegex(nt)}(?=\\s|$)`);
     if (re.test(norm)) return token.replace('’', "'");
@@ -221,7 +235,23 @@ function extractDate(norm: string): string {
 }
 
 function extractCreneau(norm: string): string {
-  for (const token of triggers.creneau) {
+  const timePatterns = [
+    /(?:luc|a|at)\s*\d{1,2}(?:h|gio|:)\d{2}(?:\s*(?:sang|chieu|toi|am|pm))?/,
+    /(?:luc|a|at)\s*\d{1,2}(?:\s*(?:h|gio|gio\s*sang|gio\s*chieu))?(?:\s*(?:sang|chieu|toi|am|pm))?/,
+    /\d{1,2}\s*(?:h|gio)\s*\d{2}(?:\s*(?:sang|chieu|toi|am|pm))?/,
+    /\d{1,2}\s*(?:h|gio)\s*(?:sang|chieu|toi|am|pm)/,
+    /\d{1,2}:\d{2}\s*(?:am|pm)?/,
+    /avant\s*\d{1,2}\s*h?/,
+  ];
+  for (const re of timePatterns) {
+    const m = norm.match(re);
+    if (m) return m[0].trim();
+  }
+
+  const tokens = [...triggers.creneau].sort(
+    (a, b) => normalize(b).length - normalize(a).length,
+  );
+  for (const token of tokens) {
     const nt = normalize(token);
     const re = new RegExp(`(?:^|\\s)${escapeRegex(nt)}(?=\\s|$)`);
     if (re.test(norm)) return token;
@@ -400,7 +430,7 @@ export function parseOrder(rawText: string, opts: ParseOptions = {}): ParseOrder
             contributed = true;
             break;
           case 'noQty':
-            sawProductWithoutQuantity = true;
+            if (!hasCorrectionIntent(norm)) sawProductWithoutQuantity = true;
             skipped.push({ segment: seg, reason: 'missing_quantity' });
             break;
           case 'nonInteger':
@@ -432,8 +462,6 @@ function computeMissingAndReprompt(order: ParsedOrder, sawProductWithoutQuantity
   const missing: MissingField[] = [];
   if (!order.client) missing.push('client');
   if (!order.site) missing.push('site');
-  if (!order.date_livraison) missing.push('date_livraison');
-  if (!order.creneau_livraison) missing.push('creneau_livraison');
   if (order.items.length === 0) missing.push('product');
   if (sawProductWithoutQuantity) missing.push('quantity');
   order.missing_fields = missing;
@@ -443,7 +471,6 @@ function computeMissingAndReprompt(order: ParsedOrder, sawProductWithoutQuantity
   if (order.items.length === 0 && !sawProductWithoutQuantity) reason = 'noValidItems';
   else if (sawProductWithoutQuantity) reason = 'missingQuantity';
   else if (!order.client) reason = 'missingClient';
-  else if (!order.date_livraison) reason = 'missingDate';
 
   order.reprompt = buildReprompt(reason, order.reprompt.already_asked);
 }

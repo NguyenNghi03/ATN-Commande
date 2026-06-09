@@ -17,6 +17,8 @@ import {
   applyParsedItemsToRows,
   buildOrderForm,
   buildParsedOrderFromState,
+  buildInitialAdmin,
+  formatDefaultCreneau,
   unitToContract,
   type AdminFields,
 } from '../lib/orderForm';
@@ -29,14 +31,6 @@ import { isValidateIntent } from '../lib/orderValidate';
 const STORAGE_KEY = 'atn-commande-draft';
 
 export type AdminFieldKey = keyof AdminFields;
-
-const EMPTY_ADMIN: AdminFields = {
-  client: '',
-  site: '',
-  date_livraison: '',
-  creneau_livraison: '',
-  commentaire_livraison: '',
-};
 
 const EMPTY_REPROMPT: RepromptState = {
   required: false,
@@ -80,7 +74,6 @@ export function buildInitialRows(): OrderRow[] {
 type SavedState = {
   rows: OrderRow[];
   actionLog: ActionLogEntry[];
-  admin?: AdminFields;
   ignoredSegments?: string[];
 };
 
@@ -107,7 +100,6 @@ function loadSavedState(): SavedState | null {
     return {
       rows: data.rows,
       actionLog,
-      admin: data.admin && typeof data.admin === 'object' ? { ...EMPTY_ADMIN, ...data.admin } : undefined,
       ignoredSegments: Array.isArray(data.ignoredSegments) ? data.ignoredSegments : undefined,
     };
   } catch {
@@ -115,14 +107,9 @@ function loadSavedState(): SavedState | null {
   }
 }
 
-function saveState(
-  rows: OrderRow[],
-  actionLog: ActionLogEntry[],
-  admin: AdminFields,
-  ignoredSegments: string[],
-) {
+function saveState(rows: OrderRow[], actionLog: ActionLogEntry[], ignoredSegments: string[]) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, actionLog, admin, ignoredSegments }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rows, actionLog, ignoredSegments }));
   } catch {
     /* quota / private mode */
   }
@@ -347,7 +334,7 @@ export function useOrderState() {
   const [rows, setRows] = useState<OrderRow[]>(saved?.rows ?? initialRows);
   const [actionLog, setActionLog] = useState<ActionLogEntry[]>(saved?.actionLog ?? []);
   const [lastValidated, setLastValidated] = useState<OrderLine[] | null>(null);
-  const [admin, setAdmin] = useState<AdminFields>(saved?.admin ?? { ...EMPTY_ADMIN });
+  const [admin, setAdmin] = useState<AdminFields>(() => buildInitialAdmin());
   const [ignoredSegments, setIgnoredSegments] = useState<string[]>(saved?.ignoredSegments ?? []);
   const [reprompt, setReprompt] = useState<RepromptState>(EMPTY_REPROMPT);
   const [status, setStatus] = useState<OrderStatus>('draft');
@@ -364,6 +351,8 @@ export function useOrderState() {
   const preferredLangRef = useRef<Lang>('fr');
   const repromptRef = useRef<RepromptState>(EMPTY_REPROMPT);
   const actionTimersRef = useRef<Map<string, number[]>>(new Map());
+  /** Créneau = đồng hồ thực cho đến khi người dùng / parser đặt khác (matin, sáng…). */
+  const creneauAutoRef = useRef(true);
   useEffect(() => {
     orderIdRef.current = orderId;
   }, [orderId]);
@@ -375,8 +364,20 @@ export function useOrderState() {
   }, [reprompt]);
 
   useEffect(() => {
-    saveState(rows, actionLog, admin, ignoredSegments);
-  }, [rows, actionLog, admin, ignoredSegments]);
+    saveState(rows, actionLog, ignoredSegments);
+  }, [rows, actionLog, ignoredSegments]);
+
+  /** Cập nhật créneau theo giờ hiện tại mỗi phút khi chưa chỉnh thủ công. */
+  useEffect(() => {
+    const tick = () => {
+      if (!creneauAutoRef.current) return;
+      const next = formatDefaultCreneau();
+      setAdmin((prev) => (prev.creneau_livraison === next ? prev : { ...prev, creneau_livraison: next }));
+    };
+    tick();
+    const id = window.setInterval(tick, 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const pushLog = useCallback((entry: ActionLogEntry) => {
     setActionLog((prev) => {
@@ -472,6 +473,7 @@ export function useOrderState() {
           if (order[field] && order[field] !== prev[field]) {
             next[field] = order[field];
             adminChanged = true;
+            if (field === 'creneau_livraison') creneauAutoRef.current = false;
           }
         });
         if (adminChanged) changed = true;
@@ -525,7 +527,8 @@ export function useOrderState() {
     setRows(fresh);
     setActionLog([]);
     setLastValidated(null);
-    setAdmin({ ...EMPTY_ADMIN });
+    creneauAutoRef.current = true;
+    setAdmin(buildInitialAdmin());
     setIgnoredSegments([]);
     setReprompt(EMPTY_REPROMPT);
     setStatus('draft');
@@ -620,15 +623,27 @@ export function useOrderState() {
         processChunk(trimmed);
       }
 
-      for (const chunk of splitIntoKeyChunks(trimmed)) {
+      const subChunks = splitIntoKeyChunks(trimmed);
+      for (const chunk of subChunks) {
         processChunk(chunk);
       }
 
-      // Phase 1 parser: admin / reprompt — defer khi voice đã khớp sản phẩm (xử lý progressive)
-      const parseChanged =
-        voiceNoisyFull || (source === 'voice' && matched)
-          ? false
-          : applyParseOrder(trimmed, source, { skipItems: matched });
+      // Phase 1 parser: admin + reprompt (luôn chạy; items có thể skip khi đã khớp voice)
+      let parseChanged = false;
+      if (!voiceNoisyFull) {
+        if (applyParseOrder(trimmed, source, { skipItems: matched })) parseChanged = true;
+        const fullSig = chunkSignature(trimmed);
+        for (const chunk of subChunks) {
+          if (chunkSignature(chunk) === fullSig) continue;
+          if (
+            applyParseOrder(chunk, source, {
+              skipItems: true,
+            })
+          ) {
+            parseChanged = true;
+          }
+        }
+      }
 
       if (matched) {
         setStatus((s) => (s === 'validated' ? 'reopened' : s));
@@ -644,6 +659,7 @@ export function useOrderState() {
   );
 
   const setAdminField = useCallback((field: AdminFieldKey, value: string) => {
+    if (field === 'creneau_livraison') creneauAutoRef.current = false;
     setAdmin((prev) => ({ ...prev, [field]: value }));
   }, []);
 
